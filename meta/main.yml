@@ -7,10 +7,7 @@ galaxy_info:
   platforms:
   - name: Ubuntu
     versions:
-    - trusty
-  - name: EL
-    versions:
-    - 7
+    - xenial
   galaxy_tags:
    - kafka
 
