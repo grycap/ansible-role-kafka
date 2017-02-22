@@ -4,15 +4,23 @@
 Apache Kafka Role
 ===================
 
-Install Apache Kafka (Only working for Ubuntu 16)
+Install [Apache Kafka](https://kafka.apache.org/).  
+This role has been tested only with Ubuntu 16. Is not ensured that it will work with other systems.
 
 Role Variables
 --------------
 
-The variables that can be passed to this role and a brief description about them are as follows.
+Variables used in this role:
 
+	# Install info
 	base_kafka_version: "0.10.1.1"
 	kafka_version: "2.12-{{ base_kafka_version }}"
+	## System info
+	kafka_system_user_name: kafka
+	kafka_system_group_name: kafka
+	kafka_system_comment: Kafka system user
+	kafka_system_shell: /bin/false
+	kafka_system_user_home: "/var/lib/{{ kafka_system_user_name }}"
 
 Example Playbook
 ----------------
