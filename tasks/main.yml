@@ -1,3 +1,30 @@
+- name: Create the system groups
+  group:
+    name: "kafka"
+    state: "present"
+    system: "yes"
+
+- name: Create system users
+  user:
+    name: "{{ kafka_system_user_name }}"
+    group: "{{ kafka_system_group_name }}"
+    comment: "{{ kafka_system_comment }}"
+    shell: "{{ kafka_system_shell }}"
+    system: "yes"
+    createhome: "no"
+    home: "{{ kafka_system_user_home }}"
+
+- name: Create dirs
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - { path: "/var/kafka", mode: "0755", owner: "kafka", group: "kafka" }
+    - { path: "/var/log/kafka", mode: "0755", owner: "kafka", group: "kafka" }
+
 - name: Download kafka
   get_url:
     url: "http://apache.mirrors.tds.net/kafka/{{ base_kafka_version }}/kafka_{{ kafka_version }}.tgz"
