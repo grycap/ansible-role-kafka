@@ -1,88 +1,106 @@
-- name: Create the system groups
-  group:
-    name: "kafka"
-    state: "present"
-    system: "yes"
+---
+- block:
+  # Check Zookeeper and Java prerequisites
+  - name: Check if Zookeeper is running
+    command: systemctl status zookeeper
+    ignore_errors: yes
+    changed_when: false
+    register: service_zookeeper_status
 
-- name: Create system users
-  user:
-    name: "{{ kafka_system_user_name }}"
-    group: "{{ kafka_system_group_name }}"
-    comment: "{{ kafka_system_comment }}"
-    shell: "{{ kafka_system_shell }}"
-    system: "yes"
-    createhome: "no"
-    home: "{{ kafka_system_user_home }}"
+  - name: Install Zookeeper when service is not found
+    apt: name=zookeeperd state=latest update_cache=yes
+    when: service_zookeeper_status | failed
 
-- name: Create dirs
-  file:
-    path: "{{ item.path }}"
-    state: directory
-    owner: "{{ item.owner }}"
-    group: "{{ item.group }}"
-    mode: "{{ item.mode }}"
-  with_items:
-    - { path: "/var/kafka", mode: "0755", owner: "kafka", group: "kafka" }
-    - { path: "/var/log/kafka", mode: "0755", owner: "kafka", group: "kafka" }
+  - name: Ensure Java is installed
+    apt: name=openjdk-8-jre-headless state=present
 
-- name: Download kafka
-  get_url:
-    url: "http://apache.mirrors.tds.net/kafka/{{ base_kafka_version }}/kafka_{{ kafka_version }}.tgz"
-    dest: "/root/kafka_{{ kafka_version }}.tgz"
-    mode: 0440
+- block:
+  # Install kafka
+  - name: Create the system groups
+    group:
+      name: "kafka"
+      state: "present"
+      system: "yes"
 
-- name: Unarchive kafka
-  unarchive:
-    src: "/root/kafka_{{ kafka_version }}.tgz"
-    dest: "/opt"
-    creates: "/opt/kafka_{{ kafka_version }}"
-    copy: "no"
+  - name: Create system users
+    user:
+      name: "{{ kafka_system_user_name }}"
+      group: "{{ kafka_system_group_name }}"
+      comment: "{{ kafka_system_comment }}"
+      shell: "{{ kafka_system_shell }}"
+      system: "yes"
+      createhome: "no"
+      home: "{{ kafka_system_user_home }}"
 
-- name: Create kafka symbolic links
-  file:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    state: link
-  with_items:
-    - src: "/opt/kafka_{{ kafka_version }}"
-      dest: "/opt/kafka"
-    - src: "/opt/kafka/config"
-      dest: "/etc/kafka"
+  - name: Create dirs
+    file:
+      path: "{{ item.path }}"
+      state: directory
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      mode: "{{ item.mode }}"
+    with_items:
+      - { path: "/var/kafka", mode: "0755", owner: "kafka", group: "kafka" }
+      - { path: "/var/log/kafka", mode: "0755", owner: "kafka", group: "kafka" }
 
-- name: Drop Kafka Config(s)
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: "{{ item.owner }}"
-    group: "{{ item.group }}"
-    mode: "{{ item.mode|default('0644') }}"
-  with_items:
-    - src: "kafka-server-start.sh.j2"
-      dest: "/opt/kafka_{{ kafka_version }}/bin/kafka-server-start.sh"
-      owner: "root"
-      group: "root"
-      mode: "0775"
-    - src: "kafka.service.j2"
-      dest: "/etc/systemd/system/kafka.service"
-      owner: "root"
-      group: "root"
-    - src: "log4j.properties.j2"
-      dest: "/etc/kafka/log4j.properties"
-      owner: "kafka"
-      group: "kafka"
-    - src: "server.properties.j2"
-      dest: "/etc/kafka/server.properties"
-      owner: "kafka"
-      group: "kafka"
-  register: kafka_config
+  - name: Download kafka
+    get_url:
+      url: "http://apache.mirrors.tds.net/kafka/{{ base_kafka_version }}/kafka_{{ kafka_version }}.tgz"
+      dest: "/root/kafka_{{ kafka_version }}.tgz"
+      mode: 0440
 
-- name: Ensure kafka launches on boot
-  service:
-    name: "kafka"
-    enabled: "yes"
+  - name: Unarchive kafka
+    unarchive:
+      src: "/root/kafka_{{ kafka_version }}.tgz"
+      dest: "/opt"
+      creates: "/opt/kafka_{{ kafka_version }}"
+      copy: "no"
 
-- name: Restart kafka
-  service:
-    name: "kafka"
-    state: "restarted"
-  when: kafka_config.changed
+  - name: Create kafka symbolic links
+    file:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      state: link
+    with_items:
+      - src: "/opt/kafka_{{ kafka_version }}"
+        dest: "/opt/kafka"
+      - src: "/opt/kafka/config"
+        dest: "/etc/kafka"
+
+  - name: Drop Kafka Config(s)
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      mode: "{{ item.mode|default('0644') }}"
+    with_items:
+      - src: "kafka-server-start.sh.j2"
+        dest: "/opt/kafka_{{ kafka_version }}/bin/kafka-server-start.sh"
+        owner: "root"
+        group: "root"
+        mode: "0775"
+      - src: "kafka.service.j2"
+        dest: "/etc/systemd/system/kafka.service"
+        owner: "root"
+        group: "root"
+      - src: "log4j.properties.j2"
+        dest: "/etc/kafka/log4j.properties"
+        owner: "kafka"
+        group: "kafka"
+      - src: "server.properties.j2"
+        dest: "/etc/kafka/server.properties"
+        owner: "kafka"
+        group: "kafka"
+    register: kafka_config
+
+  - name: Ensure kafka launches on boot
+    service:
+      name: "kafka"
+      enabled: "yes"
+
+  - name: Restart kafka
+    service:
+      name: "kafka"
+      state: "restarted"
+    when: kafka_config.changed
