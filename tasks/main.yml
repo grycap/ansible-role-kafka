@@ -9,6 +9,7 @@
       name: "kafka"
       state: "present"
       system: "yes"
+    register: kafka_group_created
 
   - name: Create system users
     user:
@@ -19,7 +20,7 @@
       system: "yes"
       createhome: "no"
       home: "{{ kafka_system_user_home }}"
-      state: "present"
+    when: kafka_group_created.changed
 
   - name: Create dirs
     file:
