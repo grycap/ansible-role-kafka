@@ -1,18 +1,6 @@
 ---
-- block:
-  # Check Zookeeper and Java prerequisites
-  - name: Check if Zookeeper is running
-    command: systemctl status zookeeper
-    ignore_errors: yes
-    changed_when: false
-    register: service_zookeeper_status
-
-  - name: Install Zookeeper when service is not found
-    apt: name=zookeeperd state=latest update_cache=yes
-    when: service_zookeeper_status | failed
-
-  - name: Ensure Java is installed
-    apt: name=openjdk-8-jre-headless state=present
+- name: Ensure Java is installed
+  apt: name=openjdk-8-jre-headless state=present
 
 - block:
   # Install kafka
