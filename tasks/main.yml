@@ -2,6 +2,11 @@
 - name: Ensure Java is installed
   apt: name=openjdk-8-jre-headless state=present
 
+- name: Select java version 8 (Problems with java 9)
+  alternatives:
+    name: java
+    path: /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+
 - block:
   # Install kafka
   - name: Create the system groups
