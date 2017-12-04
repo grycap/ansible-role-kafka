@@ -40,7 +40,7 @@
 
   - name: Download kafka
     get_url:
-      url: "http://apache.mirrors.tds.net/kafka/{{ base_kafka_version }}/kafka_{{ kafka_version }}.tgz"
+      url: "https://archive.apache.org/dist/kafka/{{ base_kafka_version }}/kafka_{{ kafka_version }}.tgz"
       dest: "/root/kafka_{{ kafka_version }}.tgz"
       mode: 0440
 
